@@ -15,4 +15,5 @@ export interface GameEntity {
   render: () => void;
   getCollisionShape?: () => CollisionShape;
   within?: (position: Position2D) => boolean;
+  destroy?(): void;
 }

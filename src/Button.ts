@@ -1,8 +1,9 @@
-import { Position2D } from "./core/common";
+import { BoundingRect, Position2D } from "./core/common";
 import { EventEmitter } from "./core/EventEmitter";
 import { GameEntity } from "./core/GameEntity";
 import { type GameEntityContext } from "./core/GameEntityContext";
-import { Pressable, PressableEvents } from "./core/Pressable";
+import { Pressable, PressableEvents, PressableState } from "./core/Pressable";
+import { withinRect } from "./utils";
 
 export type ButtonOptions = {
   text: string;
@@ -10,24 +11,37 @@ export type ButtonOptions = {
   position: Position2D;
 };
 
+const getFillStyle = (state?: PressableState) => {
+  if (!state) return "#ddd";
+  switch (state.state) {
+    case "down":
+      return "#aaa";
+    case "over":
+      return "#bbb";
+    default:
+      return "#ddd";
+  }
+};
+
 @Pressable
 export class Button
   extends EventEmitter<PressableEvents>
   implements GameEntity
 {
+  private boundingBox?: BoundingRect;
+  private pressableState?: PressableState;
+
   constructor(
     private context: GameEntityContext,
     private options: ButtonOptions
   ) {
     super();
+    this.on("cursor-state-change", (state) => (this.pressableState = state));
   }
 
   within({ x, y }: Position2D): boolean {
-    const { x: thisX, y: thisY } = this.options.position;
-    const { width, height } = this.context;
-    return (
-      x >= thisX && x <= thisX + width && y >= thisY && y <= thisY + height
-    );
+    if (this.boundingBox) return withinRect({ x, y }, this.boundingBox);
+    return false;
   }
 
   update = () => {};
@@ -43,14 +57,20 @@ export class Button
       textDimensions.actualBoundingBoxDescent;
 
     ctx.beginPath();
+    this.boundingBox = {
+      x: position.x - padding,
+      y: position.y - padding,
+      width: textDimensions.width + padding * 2,
+      height: height + padding * 2,
+    };
     ctx.roundRect(
-      position.x - padding,
-      position.y - padding,
-      textDimensions.width + padding * 2,
-      height + padding * 2,
+      this.boundingBox.x,
+      this.boundingBox.y,
+      this.boundingBox.width,
+      this.boundingBox.height,
       20
     );
-    ctx.fillStyle = "#bbb";
+    ctx.fillStyle = getFillStyle(this.pressableState);
     ctx.fill();
     ctx.stroke();
     ctx.closePath();

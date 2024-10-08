@@ -6,7 +6,7 @@ import { GameStartScene } from "../GameStartScene";
 import { GameEntityContext } from "./GameEntityContext";
 import { GameLayer } from "./GameLayer";
 import { GameEntityFactory } from "../GameEntityFactory";
-import { isPressable } from "./Pressable";
+import { isPressableEntity, PressableEntity } from "./Pressable";
 
 type GameOptions = {
   width: number;
@@ -88,18 +88,39 @@ export class Game {
   }
 
   setupMouseListeners() {
-    this.container.addEventListener("click", (ev) => {
+    const visitPressable = (callback: (entity: PressableEntity) => void) => {
       const layers = [...(this.scene?.getLayers().values() || [])].reverse();
-
       for (const layer of layers) {
         for (const entity of layer) {
-          if (isPressable(entity)) {
-            if (entity.checkCursorOver({ x: ev.offsetX, y: ev.offsetY })) {
-              entity.triggerPress();
-            }
+          if (isPressableEntity(entity)) {
+            callback(entity);
           }
         }
       }
+    };
+
+    this.container.addEventListener("mousemove", (ev) => {
+      visitPressable((entity) => {
+        entity.receiveCursorMove({ x: ev.offsetX, y: ev.offsetY });
+      });
+    });
+
+    this.container.addEventListener("click", (ev) => {
+      visitPressable((entity) => {
+        entity.receiveCursorPress({ x: ev.offsetX, y: ev.offsetY });
+      });
+    });
+
+    this.container.addEventListener("mousedown", (ev) => {
+      visitPressable((entity) => {
+        entity.receiveCursorDown({ x: ev.offsetX, y: ev.offsetY });
+      });
+    });
+
+    this.container.addEventListener("mouseup", (ev) => {
+      visitPressable((entity) => {
+        entity.receiveCursorUp({ x: ev.offsetX, y: ev.offsetY });
+      });
     });
   }
 

@@ -28,6 +28,21 @@ export function translateX<T extends Position2D>(
 type BoundingRect = {
   x: number;
   y: number;
+  width: number;
+  height: number;
 };
 
-export function overlaps(a: BoundingRect) {}
+export function withinRect(
+  { x, y }: Position2D,
+  { x: rectX, y: rectY, width, height }: BoundingRect
+) {
+  return x >= rectX && x <= rectX + width && y >= rectY && y <= rectY + height;
+}
+
+export function overlaps(a: BoundingRect, b: BoundingRect) {
+  if (a.x < b.x && a.x < b.x + b.width) return false;
+  if (a.x > b.x && a.x > b.x + b.width) return false;
+  if (a.y < b.y && a.y < b.y + b.height) return false;
+  if (a.y > b.y && a.y > b.y + b.height) return false;
+  return true;
+}

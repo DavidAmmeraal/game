@@ -81,7 +81,6 @@ export class Ball implements GameEntity {
   render() {
     const { renderingContext: context, radius } = this.options;
     const { x, y } = this.position;
-    console.log(radius);
     context.beginPath();
     context.arc(x, y, radius, 0, Math.PI * 2);
     context.fillStyle = "#0095DD";
