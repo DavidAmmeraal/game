@@ -7,7 +7,7 @@ type GConstructor<T = {}> = new (...args: any[]) => T;
 export type PressableState =
   | { state: "idle" }
   | {
-      state: "over" | "down" | "up";
+      state: "over" | "down";
       position: Position2D;
     };
 
@@ -29,8 +29,8 @@ export interface PressableEntity extends GameEntity {
 
 export function Pressable<
   T extends GConstructor<EventEmitter<PressableEvents> & GameEntity>
->(constructor: T) {
-  return class extends constructor implements PressableEntity {
+>(Base: T) {
+  return class extends Base  {
     _cursorState: PressableState = {
       state: "idle",
     };
@@ -47,8 +47,14 @@ export function Pressable<
     emitStateChange() {
       this.emit("cursor-state-change", this._cursorState);
     }
+
+    private _within(pos: Position2D) {
+      return true;
+    }
+
+
     receiveCursorMove({ x, y }: Position2D) {
-      if (this.within?.({ x, y })) {
+      if (this._within?.({ x, y })) {
         if (this._cursorState.state === "idle") {
           this.setState({ state: "over", position: { x, y } });
           this.emit("over", this._cursorState);
@@ -62,19 +68,19 @@ export function Pressable<
       }
     }
     receiveCursorDown({ x, y }: Position2D) {
-      if (this.within?.({ x, y })) {
+      if (this._within?.({ x, y })) {
         this.setState({ state: "down", position: { x, y } });
       }
     }
     receiveCursorPress({ x, y }: Position2D) {
-      if (this.within?.({ x, y })) {
+      if (this._within?.({ x, y })) {
         this.emit("press", this._cursorState);
       }
     }
     receiveCursorUp({ x, y }: Position2D) {
       this.emit("up", this._cursorState);
 
-      if (this.within?.({ x, y })) {
+      if (this._within?.({ x, y })) {
         this.setState({ state: "over", position: { x, y } });
       } else {
         this.setState({ state: "idle" });

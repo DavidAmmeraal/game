@@ -1,6 +1,6 @@
 import { GameLayer } from "./core/GameLayer";
 import { GameScene, GameSceneContext } from "./core/GameScene";
-import { PressableState } from "./core/Pressable";
+import { promiseDelegate } from "./PromiseDelegate";
 
 export class GameStartScene extends GameScene {
   private bottomLayer: GameLayer;
@@ -13,52 +13,41 @@ export class GameStartScene extends GameScene {
     this.topLayer = this.createLayer(1);
   }
 
-  async perform() {
+  perform() {
     const radius = this.ctx.width / 50;
 
-    this.bottomLayer.add(
-      this.ctx.entityFactory.createBall({
-        position: {
-          x: 0 + radius,
-          y: 0 + radius,
-        },
-        radius,
-        bounds: {
-          width: this.ctx.width,
-          height: this.ctx.height,
-        },
-        collisionEntities: new Map(),
-        velocity: this.ctx.width / 200,
-        renderingContext: this.ctx.renderingContext,
-      })
-    );
+    const { resolve, promise } = promiseDelegate();
+
+    const ball = this.ctx.entityFactory.createBall({
+      position: {
+        x: 0 + radius,
+        y: 0 + radius,
+      },
+      radius,
+      bounds: {
+        width: this.ctx.width,
+        height: this.ctx.height,
+      },
+      velocity: this.ctx.width / 200,
+      renderingContext: this.ctx.renderingContext,
+    });
+
+    ball.on("collision", (entity) => {});
+
+    this.bottomLayer.add(ball);
 
     const button = this.ctx.entityFactory.createButton({
       text: "Start game",
-      position: { x: 50, y: 50 },
+      position: { x: this.ctx.width / 2, y: this.ctx.height / 2 },
       padding: 5,
     });
 
-    button.on("cursor-state-change", (state: PressableState) => {
-      console.log(JSON.stringify(state, null, 2));
-    });
+    this.topLayer.add(button);
 
     button.on("press", () => {
-      console.log("button pressed!");
+      resolve();
     });
 
-    button.on("over", () => {
-      console.log("button hovered!");
-    });
-
-    button.on("down", () => {
-      console.log("button down!");
-    });
-
-    button.on("up", () => {
-      console.log("button up!");
-    });
-
-    this.topLayer.add(button);
+    return promise;
   }
 }

@@ -23,17 +23,13 @@ const getFillStyle = (state?: PressableState) => {
   }
 };
 
-@Pressable
-export class Button
-  extends EventEmitter<PressableEvents>
-  implements GameEntity
-{
+export class Button extends GameEntity {
   private boundingBox?: BoundingRect;
   private pressableState?: PressableState;
 
   constructor(
     private context: GameEntityContext,
-    private options: ButtonOptions
+    private options: ButtonOptions,
   ) {
     super();
     this.on("cursor-state-change", (state) => (this.pressableState = state));
@@ -68,7 +64,7 @@ export class Button
       this.boundingBox.y,
       this.boundingBox.width,
       this.boundingBox.height,
-      20
+      20,
     );
     ctx.fillStyle = getFillStyle(this.pressableState);
     ctx.fill();
@@ -80,7 +76,7 @@ export class Button
       this.options.text,
       position.x,
       position.y,
-      textDimensions.width
+      textDimensions.width,
     );
   };
 }

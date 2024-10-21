@@ -6,6 +6,7 @@ export type PongPadOptions = {
   context: CanvasRenderingContext2D;
   rect: BoundingRect;
   bounds: [left: number, right: number];
+  onBounce: () => void;
 };
 
 const resolveKey = (ev: KeyboardEvent) => {
@@ -18,7 +19,7 @@ const resolveKey = (ev: KeyboardEvent) => {
   return undefined;
 };
 
-export class PongPad implements GameEntity {
+export class PongPad extends GameEntity {
   private keyPressed: "left" | "right" | undefined;
   private minLeft: number;
   private maxLeft: number;
@@ -35,6 +36,7 @@ export class PongPad implements GameEntity {
   };
 
   constructor(private options: PongPadOptions) {
+    super();
     const [minLeft, rightBound] = this.options.bounds;
     this.rect = { ...options.rect };
 
@@ -42,10 +44,12 @@ export class PongPad implements GameEntity {
     this.maxLeft = rightBound - this.rect.width;
   }
 
-  getCollisionShape = () => ({
-    type: "rect" as const,
-    ...this.rect,
-  });
+  get shape() {
+    return {
+      type: "rect" as const,
+      ...this.rect,
+    };
+  }
 
   render = () => {
     this.options.context.fillStyle = "#000";
@@ -53,7 +57,7 @@ export class PongPad implements GameEntity {
       this.rect.x,
       this.rect.y,
       this.rect.width,
-      this.rect.height
+      this.rect.height,
     );
 
     this.attach.bind(this);

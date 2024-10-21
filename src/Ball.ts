@@ -1,5 +1,6 @@
+import { Collidable } from "./core/Collidable";
+import { EventEmitter } from "./core/EventEmitter";
 import { GameEntity } from "./core/GameEntity";
-import { GameEntityContext } from "./core/GameEntityContext";
 import { Position2D } from "./core/common";
 
 export type BallOptions = {
@@ -11,47 +12,41 @@ export type BallOptions = {
   radius: number;
   renderingContext: CanvasRenderingContext2D;
   velocity: number;
-  collisionEntities: Map<string, GameEntity>;
+  collisionEntities?: Set<GameEntity>;
+  checkOutOfBounds?: (position: Position2D) => void;
+  onOutOfBounds?: () => void;
+  onCollide?: () => void;
 };
 
-export class Ball implements GameEntity {
+export class Ball extends Collidable(GameEntity) {
   private position;
-  private dx: number;
-  private dy: number;
+  private _velocity: number = 0;
+  private dx: number = 0;
+  private dy: number = 0;
 
-  constructor(private ctx: GameEntityContext, private options: BallOptions) {
+  constructor(private options: BallOptions) {
+    super();
     this.position = options.position;
-    this.dx = this.options.velocity;
-    this.dy = -this.options.velocity;
+
+    this.setVelocity(this.options.velocity);
   }
 
-  getCollisionShape = () =>
-    ({
-      type: "ball",
+  public get shape() {
+    return {
+      type: "circle",
       radius: this.options.radius,
       position: this.position,
-    } as const);
+    } as const;
+  }
 
-  private checkCollisionsWithEntities() {
-    for (const [, entity] of this.options.collisionEntities) {
-      const shape = entity.getCollisionShape?.();
-      if (!shape) continue;
-      const { x, y } = this.getCollisionShape().position;
-      const radius = this.getCollisionShape().radius;
+  public get velocity(): number {
+    return this._velocity;
+  }
 
-      // Only colliding with pads for now
-      if (shape.type === "rect") {
-        const rect = shape;
-        if (
-          x + radius >= rect.x &&
-          x + radius <= rect.x + rect.width &&
-          y + radius >= rect.y &&
-          y + radius <= rect.y + rect.height
-        ) {
-          this.dy = -this.dy;
-        }
-      }
-    }
+  public setVelocity(velocity: number) {
+    this._velocity = velocity;
+    this.dx = this.options.velocity;
+    this.dy = -this.options.velocity;
   }
 
   private checkCollisionsWithBounds() {
@@ -67,15 +62,14 @@ export class Ball implements GameEntity {
     }
   }
 
+  start() {}
+
   update() {
     let { x, y } = this.position;
-
-    this.checkCollisionsWithEntities();
-    this.checkCollisionsWithBounds();
-
     x += this.dx;
     y += this.dy;
     this.position = { x, y };
+    this.checkCollisionsWithBounds();
   }
 
   render() {

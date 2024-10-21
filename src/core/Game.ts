@@ -7,6 +7,7 @@ import { GameEntityContext } from "./GameEntityContext";
 import { GameLayer } from "./GameLayer";
 import { GameEntityFactory } from "../GameEntityFactory";
 import { isPressableEntity, PressableEntity } from "./Pressable";
+import { Level1Scene } from "../Level1Scene";
 
 type GameOptions = {
   width: number;
@@ -159,6 +160,10 @@ export class Game {
     const startScene = new GameStartScene(this.createGameSceneContext());
     this.scene = startScene;
     await startScene.perform();
+
+    const level1Scene = new Level1Scene(this.createGameSceneContext());
+    this.scene = level1Scene;
+    await level1Scene.perform();
   }
 
   /*

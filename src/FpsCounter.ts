@@ -1,8 +1,10 @@
 import { GameEntityContext } from "./core/GameEntityContext";
 import { GameEntity } from "./core/GameEntity";
 
-export class FpsCounter implements GameEntity {
-  constructor(private ctx: GameEntityContext) {}
+export class FpsCounter extends GameEntity {
+  constructor(private ctx: GameEntityContext) {
+    super();
+  }
 
   update() {
     return;
@@ -12,7 +14,7 @@ export class FpsCounter implements GameEntity {
     this.ctx.renderingContext.fillText(
       `FPS:${this.ctx.getFps()}`,
       this.ctx.width - 100,
-      50
+      50,
     );
   }
 }
