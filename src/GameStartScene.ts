@@ -32,8 +32,6 @@ export class GameStartScene extends GameScene {
       renderingContext: this.ctx.renderingContext,
     });
 
-    ball.on("collision", (entity) => {});
-
     this.bottomLayer.add(ball);
 
     const button = this.ctx.entityFactory.createButton({
@@ -44,7 +42,7 @@ export class GameStartScene extends GameScene {
 
     this.topLayer.add(button);
 
-    button.on("press", () => {
+    button.pressable.events.on("press", () => {
       resolve();
     });
 

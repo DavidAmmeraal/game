@@ -1,5 +1,5 @@
+import { Mixin } from "ts-mixer";
 import { Collidable } from "./core/Collidable";
-import { EventEmitter } from "./core/EventEmitter";
 import { GameEntity } from "./core/GameEntity";
 import { Position2D } from "./core/common";
 
@@ -18,7 +18,7 @@ export type BallOptions = {
   onCollide?: () => void;
 };
 
-export class Ball extends Collidable(GameEntity) {
+export class Ball extends Mixin(Collidable) implements GameEntity {
   private position;
   private _velocity: number = 0;
   private dx: number = 0;
@@ -29,9 +29,13 @@ export class Ball extends Collidable(GameEntity) {
     this.position = options.position;
 
     this.setVelocity(this.options.velocity);
+    this.collisions.events.on("collision", () => {
+      this.dx = -this.dx;
+      this.dy = -this.dy;
+    });
   }
 
-  public get shape() {
+  public getShape() {
     return {
       type: "circle",
       radius: this.options.radius,
@@ -65,6 +69,7 @@ export class Ball extends Collidable(GameEntity) {
   start() {}
 
   update() {
+    console.log("update!");
     let { x, y } = this.position;
     x += this.dx;
     y += this.dy;

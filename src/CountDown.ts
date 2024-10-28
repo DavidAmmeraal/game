@@ -7,15 +7,13 @@ export type CountDownOptions = {
   count: number;
 };
 
-export class CountDown extends GameEntity {
+export class CountDown implements GameEntity {
   private timeout: number | undefined;
   private currentNumber: number | undefined;
   constructor(
     private ctx: GameEntityContext,
     private options: CountDownOptions,
-  ) {
-    super();
-  }
+  ) {}
 
   async start() {
     const { promise, resolve } = promiseDelegate();

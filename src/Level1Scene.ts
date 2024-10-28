@@ -21,7 +21,6 @@ export class Level1Scene extends GameScene {
     this.layer.add(countdown);
     await countdown.start();
     this.layer.delete(countdown);
-    console.log("doing this");
     countdown.destroy();
 
     const radius = this.ctx.width / 50;
@@ -43,14 +42,13 @@ export class Level1Scene extends GameScene {
         return position.y + radius >= this.ctx.height;
       },
       onOutOfBounds: () => {
-        console.log("resolving");
         resolve();
       },
     });
     this.ball.collisions.events.on("collision", (entity) => {
       if (entity === this.ball) return;
       this.ball?.collisions.events.emit("collision", entity);
-    })
+    });
     this.layer.add(this.ball);
     return promise;
   }

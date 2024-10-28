@@ -1,7 +1,8 @@
 import { GameEntity } from "./GameEntity";
 import { EventEmitter } from "./EventEmitter";
-import { GenericConstructor } from "./GenericConstructor";
 import { collide } from "./collide";
+import { Shape } from "./Shape";
+import { hasMixin } from "ts-mixer";
 
 export interface CollidableEntity extends GameEntity {
   collisions: {
@@ -13,15 +14,24 @@ type CollidableEvents = {
   collision: [GameEntity];
 };
 
-export function Collidable<TBase extends GenericConstructor<GameEntity>>(
-  Base: TBase,
-) {
-  return class extends Base implements CollidableEntity {
-    collisions = {
-      events: new EventEmitter<CollidableEvents>(),
-      collides: (entity: CollidableEntity) => {
-        return collide(this.shape, entity);
-      },
-    };
+export abstract class Collidable {
+  collisions = {
+    events: new EventEmitter<CollidableEvents>(),
+    collides: (entity: CollidableEntity) => {
+      const shapeA = entity.getShape?.();
+      const shapeB = this?.getShape();
+      if (shapeA && shapeB) {
+        return collide(shapeA, shapeB);
+      }
+      return false;
+    },
   };
+
+  abstract getShape(): Shape | undefined;
+}
+
+export function isCollidableEntity(
+  entity: unknown,
+): entity is CollidableEntity {
+  return hasMixin(entity, Collidable);
 }

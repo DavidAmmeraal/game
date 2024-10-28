@@ -1,8 +1,7 @@
+import { hasMixin } from "ts-mixer";
 import { Position2D } from "./common";
 import { EventEmitter } from "./EventEmitter";
 import { GameEntity } from "./GameEntity";
-
-type GConstructor<T = {}> = new (...args: any[]) => T;
 
 export type PressableState =
   | { state: "idle" }
@@ -20,85 +19,72 @@ export type PressableEvents = {
   up: [PressableState];
 };
 
-export interface PressableEntity extends GameEntity {
-  receiveCursorMove: (position: Position2D) => void;
-  receiveCursorPress: (position: Position2D) => void;
-  receiveCursorDown: (position: Position2D) => void;
-  receiveCursorUp: (position: Position2D) => void;
-}
+export abstract class Pressable {
+  private _cursorState: PressableState = {
+    state: "idle",
+  };
 
-export function Pressable<
-  T extends GConstructor<EventEmitter<PressableEvents> & GameEntity>
->(Base: T) {
-  return class extends Base  {
-    _cursorState: PressableState = {
-      state: "idle",
-    };
+  get cursorState() {
+    return { ...this._cursorState };
+  }
 
-    get cursorState() {
-      return { ...this._cursorState };
-    }
-
-    setState(state: PressableState) {
-      this._cursorState = { ...state };
-      this.emitStateChange();
-    }
-
-    emitStateChange() {
-      this.emit("cursor-state-change", this._cursorState);
-    }
-
-    private _within(pos: Position2D) {
-      return true;
-    }
-
-
-    receiveCursorMove({ x, y }: Position2D) {
-      if (this._within?.({ x, y })) {
+  pressable = {
+    events: new EventEmitter<PressableEvents>(),
+    receiveCursorMove: ({ x, y }: Position2D) => {
+      if (this.isPressableEventWithin?.({ x, y })) {
         if (this._cursorState.state === "idle") {
           this.setState({ state: "over", position: { x, y } });
-          this.emit("over", this._cursorState);
+          this.pressable.events.emit("over", this._cursorState);
           return;
         }
       } else {
         if (this._cursorState.state === "over") {
           this.setState({ state: "idle" });
-          this.emit("out", this._cursorState);
+          this.pressable.events.emit("out", this._cursorState);
         }
       }
-    }
-    receiveCursorDown({ x, y }: Position2D) {
-      if (this._within?.({ x, y })) {
+    },
+    receiveCursorDown: ({ x, y }: Position2D) => {
+      if (this.isPressableEventWithin?.({ x, y })) {
         this.setState({ state: "down", position: { x, y } });
       }
-    }
-    receiveCursorPress({ x, y }: Position2D) {
-      if (this._within?.({ x, y })) {
-        this.emit("press", this._cursorState);
+    },
+    receiveCursorPress: ({ x, y }: Position2D) => {
+      if (this.isPressableEventWithin?.({ x, y })) {
+        this.pressable.events.emit("press", this._cursorState);
       }
-    }
-    receiveCursorUp({ x, y }: Position2D) {
-      this.emit("up", this._cursorState);
+    },
+    receiveCursorUp: ({ x, y }: Position2D) => {
+      this.pressable.events.emit("up", this._cursorState);
 
-      if (this._within?.({ x, y })) {
+      if (this.isPressableEventWithin?.({ x, y })) {
         this.setState({ state: "over", position: { x, y } });
       } else {
         this.setState({ state: "idle" });
       }
-    }
-    destroy = () => {
-      super.destroy?.();
-      this.clear("cursor-state-change");
-      this.clear("over");
-      this.clear("down");
-      this.clear("press");
-      this.clear("up");
-    };
+    },
+  };
+
+  private setState(state: PressableState) {
+    this._cursorState = { ...state };
+    this.emitStateChange();
+  }
+
+  private emitStateChange() {
+    this.pressable.events.emit("cursor-state-change", this._cursorState);
+  }
+
+  protected abstract isPressableEventWithin(pos: Position2D): boolean;
+
+  destroy = () => {
+    this.pressable.events.clear("cursor-state-change");
+    this.pressable.events.clear("over");
+    this.pressable.events.clear("down");
+    this.pressable.events.clear("press");
+    this.pressable.events.clear("up");
   };
 }
 
-export function isPressableEntity(
-  entity: GameEntity
-): entity is PressableEntity {
-  return "receiveCursorMove" in entity;
+export function isPressable(entity: unknown): entity is Pressable {
+  return hasMixin(entity, Pressable);
 }

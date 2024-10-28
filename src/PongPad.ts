@@ -19,7 +19,7 @@ const resolveKey = (ev: KeyboardEvent) => {
   return undefined;
 };
 
-export class PongPad extends GameEntity {
+export class PongPad implements GameEntity {
   private keyPressed: "left" | "right" | undefined;
   private minLeft: number;
   private maxLeft: number;
@@ -36,7 +36,6 @@ export class PongPad extends GameEntity {
   };
 
   constructor(private options: PongPadOptions) {
-    super();
     const [minLeft, rightBound] = this.options.bounds;
     this.rect = { ...options.rect };
 

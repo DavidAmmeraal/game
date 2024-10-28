@@ -6,8 +6,10 @@ import { GameStartScene } from "../GameStartScene";
 import { GameEntityContext } from "./GameEntityContext";
 import { GameLayer } from "./GameLayer";
 import { GameEntityFactory } from "../GameEntityFactory";
-import { isPressableEntity, PressableEntity } from "./Pressable";
+import { isPressable, Pressable } from "./Pressable";
 import { Level1Scene } from "../Level1Scene";
+import { isCollidableEntity } from "./Collidable";
+import { GameEntity } from "./GameEntity";
 
 type GameOptions = {
   width: number;
@@ -21,6 +23,8 @@ const defaultGameOptions: Required<GetOptional<GameOptions>> = {
   showFps: false,
 };
 
+type GameEntityVisitor = (entity: GameEntity) => void;
+
 export class Game {
   private viewport: HTMLCanvasElement;
   private scene: GameScene | undefined;
@@ -29,8 +33,12 @@ export class Game {
   private loop: Loop;
   private topLayer: GameLayer;
   private gameEntityFactory: GameEntityFactory;
+  private entityTickVisitors: Set<GameEntityVisitor> = new Set();
 
-  constructor(private container: HTMLElement, options: Readonly<GameOptions>) {
+  constructor(
+    private container: HTMLElement,
+    options: Readonly<GameOptions>,
+  ) {
     this.options = { ...defaultGameOptions, ...options };
     const { width, height } = this.options;
     const { canvas, context } = create2DCanvas(width, height);
@@ -44,7 +52,7 @@ export class Game {
 
     this.loop = new Loop(this.options.targetFps);
     this.gameEntityFactory = new GameEntityFactory(
-      this.createGameEntityContext()
+      this.createGameEntityContext(),
     );
     this.setupRenderingContext();
     this.setupMouseListeners();
@@ -76,24 +84,22 @@ export class Game {
     };
   }
 
-  update() {
-    for (const layer of this.scene?.getLayers() || []) {
-      for (const entity of layer[1]) {
-        entity.update();
-      }
-    }
-
+  tick() {
+    this.entityTickVisitors.add((entity) => {
+      entity.update();
+    });
     for (const entity of this.topLayer) {
       entity.update();
     }
+    this.render();
   }
 
   setupMouseListeners() {
-    const visitPressable = (callback: (entity: PressableEntity) => void) => {
+    const visitPressable = (callback: (entity: Pressable) => void) => {
       const layers = [...(this.scene?.getLayers().values() || [])].reverse();
       for (const layer of layers) {
         for (const entity of layer) {
-          if (isPressableEntity(entity)) {
+          if (isPressable(entity)) {
             callback(entity);
           }
         }
@@ -102,26 +108,42 @@ export class Game {
 
     this.container.addEventListener("mousemove", (ev) => {
       visitPressable((entity) => {
-        entity.receiveCursorMove({ x: ev.offsetX, y: ev.offsetY });
+        entity.pressable.receiveCursorMove({ x: ev.offsetX, y: ev.offsetY });
       });
     });
 
     this.container.addEventListener("click", (ev) => {
       visitPressable((entity) => {
-        entity.receiveCursorPress({ x: ev.offsetX, y: ev.offsetY });
+        entity.pressable.receiveCursorPress({ x: ev.offsetX, y: ev.offsetY });
       });
     });
 
     this.container.addEventListener("mousedown", (ev) => {
       visitPressable((entity) => {
-        entity.receiveCursorDown({ x: ev.offsetX, y: ev.offsetY });
+        entity.pressable.receiveCursorDown({ x: ev.offsetX, y: ev.offsetY });
       });
     });
 
     this.container.addEventListener("mouseup", (ev) => {
       visitPressable((entity) => {
-        entity.receiveCursorUp({ x: ev.offsetX, y: ev.offsetY });
+        entity.pressable.receiveCursorUp({ x: ev.offsetX, y: ev.offsetY });
       });
+    });
+  }
+
+  setupCollisions() {
+    this.entityTickVisitors.add((entity) => {
+      if (isCollidableEntity(entity)) {
+        for (const [, layer] of this.scene?.getLayers() || []) {
+          for (const otherEntity of layer) {
+            if (isCollidableEntity(otherEntity)) {
+              if (otherEntity.collisions.collides(entity)) {
+                entity.collisions.events.emit("collision", otherEntity);
+              }
+            }
+          }
+        }
+      }
     });
   }
 
@@ -131,7 +153,7 @@ export class Game {
       0,
       0,
       this.options.width,
-      this.options.height
+      this.options.height,
     );
 
     for (const layer of this.scene?.getLayers() || []) {
@@ -150,8 +172,7 @@ export class Game {
   async start() {
     this.loop.start();
     this.loop.setCallback(() => {
-      this.update();
-      this.render();
+      this.tick();
     });
     if (this.options.showFps) {
       this.topLayer.add(this.gameEntityFactory.createFpsCounter());
@@ -165,44 +186,6 @@ export class Game {
     this.scene = level1Scene;
     await level1Scene.perform();
   }
-
-  /*
-  start() {
-    new GameStartScene();
-    const { width, height } = this.options;
-
-    const padWidth = width / 4;
-    const padHeight = height / 40;
-
-    this.playerPad = new PongPad({
-      context: this.context,
-      rect: {
-        x: width / 2 - padWidth / 2,
-        y: height - padHeight,
-        width: padWidth,
-        height: padHeight,
-      },
-      bounds: [0, width],
-    });
-
-    const ball = new Ball({
-      context: this.context,
-      radius: width / 40,
-      position: {
-        x: width / 2,
-        y: height / 2 - width / 20 / 2,
-      },
-      bounds: { width, height },
-      velocity: 2,
-      collisionEntities: this.state.entities,
-    });
-
-    this.addEntity("playerPad", this.playerPad);
-    this.addEntity("ball", ball);
-
-    this.loop.start();
-  }
-  */
 
   stop() {
     this.loop.stop();
