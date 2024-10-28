@@ -85,11 +85,11 @@ export class Game {
   }
 
   tick() {
-    this.entityTickVisitors.add((entity) => {
-      entity.update();
-    });
-    for (const entity of this.topLayer) {
-      entity.update();
+    const layers = [...(this.scene?.getLayers().values() || [])].reverse();
+    for (const layer of layers) {
+      for (const entity of layer) {
+        this.entityTickVisitors.forEach((visitor) => visitor(entity));
+      }
     }
     this.render();
   }
@@ -171,6 +171,7 @@ export class Game {
 
   async start() {
     this.loop.start();
+    this.entityTickVisitors.add((entity) => entity.update());
     this.loop.setCallback(() => {
       this.tick();
     });

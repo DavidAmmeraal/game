@@ -69,7 +69,6 @@ export class Ball extends Mixin(Collidable) implements GameEntity {
   start() {}
 
   update() {
-    console.log("update!");
     let { x, y } = this.position;
     x += this.dx;
     y += this.dy;
