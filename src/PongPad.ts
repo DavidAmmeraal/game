@@ -1,5 +1,7 @@
+import { Collidable, CollidableEntity } from "./core/Collidable";
 import { BoundingRect } from "./core/common";
 import { GameEntity } from "./core/GameEntity";
+import { Shape } from "./core/Shape";
 import { translateX } from "./utils";
 
 export type PongPadOptions = {
@@ -8,7 +10,6 @@ export type PongPadOptions = {
   bounds: [left: number, right: number];
   onBounce: () => void;
 };
-
 const resolveKey = (ev: KeyboardEvent) => {
   switch (ev.key) {
     case "ArrowLeft":
@@ -19,7 +20,7 @@ const resolveKey = (ev: KeyboardEvent) => {
   return undefined;
 };
 
-export class PongPad implements GameEntity {
+export class PongPad extends Collidable(GameEntity) {
   private keyPressed: "left" | "right" | undefined;
   private minLeft: number;
   private maxLeft: number;
@@ -36,16 +37,24 @@ export class PongPad implements GameEntity {
   };
 
   constructor(private options: PongPadOptions) {
+    super();
     const [minLeft, rightBound] = this.options.bounds;
     this.rect = { ...options.rect };
 
     this.minLeft = minLeft;
     this.maxLeft = rightBound - this.rect.width;
+
+    this.collisions.events.on("collision", this.handleCollision);
   }
 
-  get shape() {
+  private handleCollision(otherEntity: CollidableEntity) {
+    const otherShape = otherEntity.getCollisionShape();
+    console.log(otherShape);
+  }
+
+  getCollisionShape(): Shape | undefined {
     return {
-      type: "rect" as const,
+      type: "rect",
       ...this.rect,
     };
   }
@@ -84,6 +93,7 @@ export class PongPad implements GameEntity {
         break;
     }
     const { x, y, width, height } = newRect;
+
     this.rect = {
       x: Math.min(this.maxLeft, Math.max(x, this.minLeft)),
       y,

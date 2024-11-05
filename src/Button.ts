@@ -1,8 +1,7 @@
-import { Mixin } from "ts-mixer";
 import { BoundingRect, Position2D } from "./core/common";
 import { GameEntity } from "./core/GameEntity";
 import { type GameEntityContext } from "./core/GameEntityContext";
-import { Pressable, PressableState } from "./core/Pressable";
+import { PressableMixin, PressableState } from "./core/Pressable";
 import { Shape } from "./core/Shape";
 import { collide } from "./core/collide";
 
@@ -24,7 +23,7 @@ const getFillStyle = (state?: PressableState) => {
   }
 };
 
-export class Button extends Mixin(Pressable) implements GameEntity {
+export class Button extends PressableMixin(GameEntity) {
   private boundingBox?: BoundingRect;
   private pressableState?: PressableState;
 
@@ -33,9 +32,10 @@ export class Button extends Mixin(Pressable) implements GameEntity {
     private options: ButtonOptions,
   ) {
     super();
+    this.isPressableEventWithin.bind(this);
   }
 
-  protected isPressableEventWithin(pos: Position2D): boolean {
+  public isPressableEventWithin(pos: Position2D) {
     const shape = this.getShape();
     if (shape) {
       return collide({ type: "rect", ...pos, width: 0, height: 0 }, shape);

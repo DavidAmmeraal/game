@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "tsc --noEmit"
   },
   "devDependencies": {
     "prettier": "^3.3.3",

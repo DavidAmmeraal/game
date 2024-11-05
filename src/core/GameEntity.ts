@@ -4,5 +4,6 @@ export interface GameEntity {
   update(): void;
   render(): void;
   destroy?(): void;
-  getShape?(): Shape | undefined;
 }
+
+export abstract class GameEntity implements GameEntity {}

@@ -6,7 +6,7 @@ import { GameStartScene } from "../GameStartScene";
 import { GameEntityContext } from "./GameEntityContext";
 import { GameLayer } from "./GameLayer";
 import { GameEntityFactory } from "../GameEntityFactory";
-import { isPressable, Pressable } from "./Pressable";
+import { isPressable, PressableEntity } from "./Pressable";
 import { Level1Scene } from "../Level1Scene";
 import { isCollidableEntity } from "./Collidable";
 import { GameEntity } from "./GameEntity";
@@ -95,7 +95,7 @@ export class Game {
   }
 
   setupMouseListeners() {
-    const visitPressable = (callback: (entity: Pressable) => void) => {
+    const visitPressable = (callback: (entity: PressableEntity) => void) => {
       const layers = [...(this.scene?.getLayers().values() || [])].reverse();
       for (const layer of layers) {
         for (const entity of layer) {
@@ -172,6 +172,8 @@ export class Game {
   async start() {
     this.loop.start();
     this.entityTickVisitors.add((entity) => entity.update());
+    this.setupCollisions();
+
     this.loop.setCallback(() => {
       this.tick();
     });

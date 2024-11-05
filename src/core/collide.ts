@@ -48,13 +48,15 @@ function collideCircles(a: CircleShape, b: CircleShape) {
 }
 
 function collideRects(
-  { x: x1, y: y1 }: RectShape,
-  { x: x2, y: y2 }: RectShape,
+  { x: x1, y: y1, width: w1, height: h1 }: RectShape,
+  { x: x2, y: y2, width: w2, height: h2 }: RectShape,
 ) {
-  if (x1 > x2 || x2 > x1) return false;
-  if (y1 > y2 || y2 > y1) return false;
-
-  return true;
+  return (
+    x1 + w1 >= x2 && // r1 right edge past r2 left
+    x1 <= x2 + w2 && // r1 left edge past r2 right
+    y1 + h1 >= y2 && // r1 top edge past r2 bottom
+    y1 <= y2 + h2
+  );
 }
 
 export function collide(a: Shape, b: Shape): boolean {

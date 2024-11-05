@@ -47,7 +47,6 @@ export class Level1Scene extends GameScene {
     });
     this.ball.collisions.events.on("collision", (entity) => {
       if (entity === this.ball) return;
-      this.ball?.collisions.events.emit("collision", entity);
     });
     this.layer.add(this.ball);
     return promise;
